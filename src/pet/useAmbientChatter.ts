@@ -11,7 +11,7 @@ import {
   nextSpontaneousDelay,
   pickFresh,
 } from "@/pet/behavior";
-import { shattaContext } from "@/pet/context";
+import { getShattaContext, shattaContext } from "@/pet/context";
 
 /**
  * Occasional spontaneous bubbles.
