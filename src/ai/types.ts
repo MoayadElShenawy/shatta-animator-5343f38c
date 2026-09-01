@@ -17,10 +17,15 @@ export type AiRequest = {
   history?: readonly AiMessage[];
   /** Live runtime context snapshot (state, interaction source, idle time...). */
   context?: ShattaContext | null;
+  /** Who is speaking — supplied by the brain, never hard-coded in providers. */
+  character?: { id: string; name: string; persona?: unknown };
+  /** Capabilities allowed for this turn (descriptors only, no handlers). */
+  capabilities?: readonly unknown[];
   /** Optional stream of text chunks as they arrive. */
   onChunk?: (chunk: string) => void;
   signal?: AbortSignal;
 };
+
 
 /** The only response shape the rest of the app has to understand. */
 export type AiResponse = {
