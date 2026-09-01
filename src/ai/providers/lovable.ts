@@ -6,7 +6,7 @@ import type { AiProvider, AiRequest, AiResponse } from "@/ai/types";
  */
 export const lovableChatProvider: AiProvider = {
   id: "lovable-chat",
-  async send({ message, history = [], context, onChunk, signal }: AiRequest): Promise<AiResponse> {
+  async send({ message, history = [], context, character, capabilities, onChunk, signal }: AiRequest): Promise<AiResponse> {
     const messages = [
       ...history.map((m) => ({ role: m.role, content: m.content })),
       { role: "user" as const, content: message },
@@ -17,9 +17,15 @@ export const lovableChatProvider: AiProvider = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         ...(signal ? { signal } : {}),
-        // `context` is passed along for future use; the route ignores unknown fields.
-        body: JSON.stringify({ messages, context: context ?? null }),
+        // Extra fields are forwarded for future use; the route ignores unknown fields.
+        body: JSON.stringify({
+          messages,
+          context: context ?? null,
+          character: character ?? null,
+          capabilities: capabilities ?? [],
+        }),
       });
+
 
       if (!res.ok || !res.body) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
