@@ -57,7 +57,7 @@ const RULES: readonly Rule[] = [
   },
 ];
 
-const FILE_NAME = /([\w\u0600-\u06FF .-]+\.(pdf|docx?|xlsx?|pptx?|txt|png|jpe?g|gif|zip|mp[34]|csv|json))/i;
+const FILE_NAME = /([\w.-]+\.(pdf|docx?|xlsx?|pptx?|txt|png|jpe?g|gif|zip|mp[34]|csv|json))/i;
 
 export function routeCapability(message: string): CapabilityIntent {
   const text = (message ?? "").trim();
