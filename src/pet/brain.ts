@@ -13,9 +13,13 @@
 import { askShatta } from "@/ai";
 import type { AiMessage, AiResponse } from "@/ai/types";
 import { describeCapabilities, type CapabilityGate } from "@/capabilities/registry";
+import { describeIntent, routeCapability, type CapabilityIntent } from "@/capabilities/routing";
 import type { CapabilityDescriptor } from "@/capabilities/types";
 import { getActiveCharacter } from "@/characters/registry";
 import type { CharacterDefinition } from "@/characters/types";
+import { requestConfirmation, type PendingConfirmation } from "@/permissions/confirmations";
+import { checkPermission } from "@/permissions/policy";
+import type { PermissionDecision } from "@/permissions/types";
 import { getShattaContext, type ShattaContext } from "@/pet/context";
 
 export type BrainFlags = CapabilityGate["flags"];
@@ -82,3 +86,44 @@ export async function askPet(request: BrainRequest): Promise<AiResponse> {
     ...(request.signal ? { signal: request.signal } : {}),
   });
 }
+
+/**
+ * Decision layer: message -> context -> character -> capability intent ->
+ * permission check. Never executes a capability and never bypasses askShatta:
+ * a "conversation" route means the caller proceeds with `askPet` as before.
+ */
+export type BrainDecision = {
+  route: "conversation" | "capability";
+  intent: CapabilityIntent;
+  permission: PermissionDecision | null;
+  /** Pending confirmation created for a destructive/system intent, if any. */
+  confirmation: PendingConfirmation | null;
+};
+
+export function decideTurn(request: BrainRequest): BrainDecision {
+  const character = request.character ?? getActiveCharacter();
+  const flags = { ...DEFAULT_BRAIN_FLAGS, ...request.flags };
+  const intent = routeCapability(request.message);
+
+  if (!intent.capability) {
+    return { route: "conversation", intent, permission: null, confirmation: null };
+  }
+
+  const gate: CapabilityGate = {
+    allowed: character.capabilities?.allowedCapabilities ?? [],
+    flags,
+  };
+  const permission = checkPermission({ capability: intent.capability, gate });
+
+  let confirmation: PendingConfirmation | null = null;
+  if (permission.outcome === "needs_confirmation") {
+    confirmation = requestConfirmation({
+      capability: intent.capability,
+      description: describeIntent(intent),
+      metadata: intent.metadata,
+    });
+  }
+
+  return { route: "capability", intent, permission, confirmation };
+}
+
