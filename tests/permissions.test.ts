@@ -11,6 +11,7 @@ import {
   requestConfirmation,
 } from "@/permissions/confirmations";
 import { decideTurn } from "@/pet/brain";
+import { shatta } from "@/characters/shatta/personality";
 
 const ALL: string[] = [
   "web_search",
@@ -159,6 +160,7 @@ describe("brain decision flow", () => {
     const d = decideTurn({
       message: "امسحي الملف project.pdf",
       flags: { fileOperations: true },
+      character: { ...shatta, capabilities: { ...shatta.capabilities, allowedCapabilities: ALL } },
     });
     expect(d.route).toBe("capability");
     expect(d.intent.capability).toBe("file_delete");
